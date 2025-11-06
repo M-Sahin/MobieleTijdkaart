@@ -146,11 +146,13 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
+// Swagger beschikbaar maken in alle omgevingen (Development en Production)
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Mobiele Tijdkaart API v1");
+    options.RoutePrefix = "swagger"; // Swagger UI beschikbaar op /swagger
+});
 
 app.UseHttpsRedirection();
 app.UseCors(CorsPolicyName);  // CORS middleware moet vóór Authentication en Authorization
