@@ -158,6 +158,9 @@ paket-files/
 appsettings.Development.json
 appsettings.Production.json
 secrets.json
+.env
+.env.local
+.env.production
 
 # HTTP test files with credentials
 *.http

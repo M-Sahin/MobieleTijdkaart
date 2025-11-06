@@ -1,22 +1,22 @@
 version: '3.8'
 
 services:
-  # SQL Server database
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+  # PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
     container_name: mobiele-tijdkaart-db
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong@Passw0rd
-      - MSSQL_PID=Developer
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-YourStrongPasswordHere}
+      - POSTGRES_DB=MobieleTijdkaartDb
     ports:
-      - "1433:1433"
+      - "5432:5432"
     volumes:
-      - sqlserver-data:/var/opt/mssql
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - mobiele-tijdkaart-network
     healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -Q "SELECT 1" || exit 1
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 3s
       retries: 10
@@ -31,17 +31,18 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=MobieleTijdkaartDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;MultipleActiveResultSets=true
+      - UsePostgreSQL=true
+      - ConnectionStrings__PostgresConnection=Host=postgres;Database=MobieleTijdkaartDb;Username=postgres;Password=${DB_PASSWORD:-YourStrongPasswordHere}
     ports:
       - "5179:8080"
     depends_on:
-      sqlserver:
+      postgres:
         condition: service_healthy
     networks:
       - mobiele-tijdkaart-network
 
 volumes:
-  sqlserver-data:
+  postgres-data:
     driver: local
 
 networks:

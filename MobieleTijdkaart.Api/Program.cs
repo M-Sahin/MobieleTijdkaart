@@ -13,9 +13,19 @@ var builder = WebApplication.CreateBuilder(args);
 // CORS politiek naam constante
 const string CorsPolicyName = "FrontendPolicy";
 
-// Database configuratie
+// Database configuratie - Ondersteunt zowel SQL Server als PostgreSQL
+var usePostgres = builder.Configuration.GetValue<bool>("UsePostgreSQL");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    if (usePostgres)
+    {
+        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnection"));
+    }
+    else
+    {
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    }
+});
 
 // Identity configuratie
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>

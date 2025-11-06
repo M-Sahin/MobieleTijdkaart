@@ -4,6 +4,12 @@
 - Docker Desktop geïnstalleerd
 - Docker Compose (meestal inbegrepen bij Docker Desktop)
 
+## Database Keuze
+
+De applicatie ondersteunt zowel **SQL Server** als **PostgreSQL**:
+- Standaard: SQL Server (LocalDB voor lokale ontwikkeling)
+- Docker: PostgreSQL (lichter en sneller)
+
 ## Optie 1: Alleen API met Dockerfile
 
 ### Build de Docker image
@@ -30,7 +36,18 @@ docker stop mobiele-tijdkaart-api
 docker rm mobiele-tijdkaart-api
 ```
 
-## Optie 2: API + SQL Server met Docker Compose (Aanbevolen)
+## Optie 2: API + PostgreSQL met Docker Compose (Aanbevolen)
+
+### Setup
+1. Kopieer `.env.example` naar `.env`:
+```powershell
+Copy-Item .env.example .env
+```
+
+2. Bewerk `.env` en vul je database wachtwoord in:
+```
+DB_PASSWORD=jouw_veilig_wachtwoord
+```
 
 ### Start alle services
 ```powershell
@@ -38,7 +55,7 @@ docker-compose up -d
 ```
 
 Dit start:
-- SQL Server database op poort 1433
+- PostgreSQL database op poort 5432
 - API applicatie op poort 5179
 
 ### Bekijk de status
@@ -55,7 +72,7 @@ docker-compose logs -f
 docker-compose logs -f api
 
 # Alleen Database
-docker-compose logs -f sqlserver
+docker-compose logs -f postgres
 ```
 
 ### Stop alle services
@@ -90,11 +107,31 @@ Pas de volgende variabelen aan in `docker-compose.yml` voor productie:
 
 ```yaml
 environment:
-  - SA_PASSWORD=JouwVeiligWachtwoord123!  # SQL Server wachtwoord
-  - ConnectionStrings__DefaultConnection=Server=...  # Connection string
+  - POSTGRES_PASSWORD=JouwVeiligWachtwoord123!  # PostgreSQL wachtwoord
+  - ConnectionStrings__PostgresConnection=Host=...  # Connection string
 ```
 
-⚠️ **Belangrijk**: Verander het SA_PASSWORD in productie!
+⚠️ **Belangrijk**: Verander het POSTGRES_PASSWORD in productie!
+
+## Lokale Ontwikkeling met PostgreSQL
+
+Om PostgreSQL lokaal te gebruiken zonder Docker:
+
+1. Installeer PostgreSQL lokaal
+2. Pas `appsettings.json` aan:
+```json
+{
+  "UsePostgreSQL": true,
+  "ConnectionStrings": {
+    "PostgresConnection": "Host=127.0.0.1;Database=postgres;Username=postgres;Password=pYY3_u.6>cM&8CV"
+  }
+}
+```
+3. Voer migraties uit:
+```powershell
+cd MobieleTijdkaart.Api
+dotnet ef database update --project ..\MobieleTijdkaart.Infrastructure
+```
 
 ## Troubleshooting
 
@@ -105,8 +142,8 @@ docker-compose logs api
 
 ### Database connectie problemen
 ```powershell
-# Test database connectie
-docker exec -it mobiele-tijdkaart-db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd
+# Test PostgreSQL connectie
+docker exec -it mobiele-tijdkaart-db psql -U postgres -d MobieleTijdkaartDb
 ```
 
 ### Reset alles
@@ -118,8 +155,9 @@ docker-compose up -d --build
 ## Productie Deployment
 
 Voor productie deployment:
-1. Gebruik een externe SQL Server of Azure SQL Database
+1. Gebruik een externe PostgreSQL database of cloud provider (bijv. Supabase, Neon, Railway)
 2. Configureer de connection string via environment variables
 3. Gebruik Docker secrets voor gevoelige data
 4. Configureer HTTPS met SSL certificaten
 5. Pas CORS origins aan voor je productie domain
+6. Zet `UsePostgreSQL=true` in de environment variables
