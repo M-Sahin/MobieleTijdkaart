@@ -1,13 +1,10 @@
 namespace MobieleTijdkaart.Application.DTOs;
 
-public class CreateTijdRegistratieDto
-{
-    public int ProjectId { get; set; }
-    public DateTimeOffset StartTijd { get; set; }
-    public DateTimeOffset? EindTijd { get; set; }
-    public int DuurInMinuten { get; set; }
-    public string? Omschrijving { get; set; }
-}
+public record CreateTijdRegistratieRequest(
+    int ProjectId,
+    DateTimeOffset StartTijd,
+    string? Omschrijving
+);
 
 public class TijdRegistratieDto
 {
