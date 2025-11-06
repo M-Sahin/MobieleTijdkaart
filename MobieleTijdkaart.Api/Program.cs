@@ -10,6 +10,9 @@ using MobieleTijdkaart.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// CORS politiek naam constante
+const string CorsPolicyName = "FrontendPolicy";
+
 // Database configuratie
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -64,12 +67,15 @@ builder.Services.AddScoped<IUserService, UserService>();
 // CORS configuratie
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowNextJs", policy =>
+    options.AddPolicy(CorsPolicyName, policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        policy.WithOrigins(
+                "http://localhost:3000",                                    // Lokale Next.js ontwikkeling
+                "https://mobiele-tijdkaart-frontend.vercel.app"            // Vercel productie (placeholder)
+              )
+              .AllowAnyHeader()                                             // Sta alle headers toe (inclusief Authorization)
+              .WithMethods("GET", "POST", "PUT", "DELETE")                 // Alleen essentiële HTTP methods
+              .AllowCredentials();                                          // Voor toekomstige HTTP-only cookies
     });
 });
 
@@ -137,7 +143,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors("AllowNextJs");
+app.UseCors(CorsPolicyName);  // CORS middleware moet vóór Authentication en Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
