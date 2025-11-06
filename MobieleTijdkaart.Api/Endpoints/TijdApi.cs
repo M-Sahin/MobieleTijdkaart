@@ -17,6 +17,12 @@ public static class TijdApi
             .WithTags("Tijdregistratie")
             .WithOpenApi();
 
+        group.MapPut("/{id}/stop", StopTijdRegistratieAsync)
+            .RequireAuthorization()
+            .WithName("StopTijdRegistratie")
+            .WithTags("Tijdregistratie")
+            .WithOpenApi();
+
         group.MapGet("/", GetAllTijdRegistratiesAsync)
             .RequireAuthorization()
             .WithName("GetAllTijdRegistraties")
@@ -91,6 +97,71 @@ public static class TijdApi
             .FirstAsync();
 
         return Results.Created($"/api/tijd/{result.Id}", result);
+    }
+
+    private static async Task<IResult> StopTijdRegistratieAsync(
+        int id,
+        ApplicationDbContext db,
+        IUserService userService,
+        ClaimsPrincipal user)
+    {
+        // Haal de ingelogde gebruiker op uit de JWT token
+        var userId = userService.GetCurrentUserId(user);
+        
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Zoek de tijdregistratie op
+        var tijdRegistratie = await db.TijdRegistraties
+            .Include(t => t.Project)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (tijdRegistratie == null)
+        {
+            return Results.NotFound(new { message = "Tijdregistratie niet gevonden" });
+        }
+
+        // Controle 1: Eigendom - behoort dit record tot de ingelogde gebruiker?
+        if (tijdRegistratie.UserId != userId)
+        {
+            return Results.Problem(
+                detail: "U heeft geen toegang tot deze tijdregistratie",
+                statusCode: StatusCodes.Status403Forbidden
+            );
+        }
+
+        // Controle 2: Controleer of de tijdregistratie nog niet is afgesloten
+        if (tijdRegistratie.EindTijd.HasValue)
+        {
+            return Results.BadRequest(new { message = "Deze tijdregistratie is al afgesloten" });
+        }
+
+        // Update: Vul EindTijd in met huidige tijd
+        tijdRegistratie.EindTijd = DateTimeOffset.UtcNow;
+
+        // Duur Berekening: Bereken DuurInMinuten
+        var duur = tijdRegistratie.EindTijd.Value - tijdRegistratie.StartTijd;
+        tijdRegistratie.DuurInMinuten = (int)duur.TotalMinutes;
+
+        // Sla wijzigingen op
+        await db.SaveChangesAsync();
+
+        // Retourneer bijgewerkte registratie
+        var result = new TijdRegistratieDto
+        {
+            Id = tijdRegistratie.Id,
+            ProjectId = tijdRegistratie.ProjectId,
+            ProjectNaam = tijdRegistratie.Project.Naam,
+            UserId = tijdRegistratie.UserId,
+            StartTijd = tijdRegistratie.StartTijd,
+            EindTijd = tijdRegistratie.EindTijd,
+            DuurInMinuten = tijdRegistratie.DuurInMinuten,
+            Omschrijving = tijdRegistratie.Omschrijving
+        };
+
+        return Results.Ok(result);
     }
 
     private static async Task<IResult> GetAllTijdRegistratiesAsync(

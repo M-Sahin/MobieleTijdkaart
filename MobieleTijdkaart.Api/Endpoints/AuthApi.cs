@@ -11,12 +11,57 @@ public static class AuthApi
 {
     public static RouteGroupBuilder MapAuthApi(this RouteGroupBuilder group)
     {
+        group.MapPost("/register", RegisterAsync)
+            .WithName("Register")
+            .WithTags("Authentication")
+            .WithOpenApi();
+
         group.MapPost("/login", LoginAsync)
             .WithName("Login")
             .WithTags("Authentication")
             .WithOpenApi();
 
         return group;
+    }
+
+    private static async Task<IResult> RegisterAsync(
+        RegisterRequest request,
+        UserManager<IdentityUser> userManager,
+        IConfiguration configuration)
+    {
+        // Valideer wachtwoord bevestiging
+        if (request.Wachtwoord != request.WachtwoordBevestiging)
+        {
+            return Results.BadRequest(new { message = "Wachtwoorden komen niet overeen" });
+        }
+
+        // Controleer of gebruiker al bestaat
+        var existingUser = await userManager.FindByEmailAsync(request.Email);
+        if (existingUser != null)
+        {
+            return Results.BadRequest(new { message = "Deze e-mail is al geregistreerd" });
+        }
+
+        // Maak nieuwe gebruiker aan
+        var user = new IdentityUser
+        {
+            UserName = request.Email,
+            Email = request.Email,
+            EmailConfirmed = true // Voor MVP, in productie zou je email verificatie gebruiken
+        };
+
+        var result = await userManager.CreateAsync(user, request.Wachtwoord);
+
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            return Results.BadRequest(new { message = "Registratie mislukt", errors });
+        }
+
+        // Automatisch inloggen na registratie: genereer JWT token
+        var token = GenerateJwtToken(user, configuration);
+
+        return Results.Created($"/api/auth/user/{user.Id}", new LoginResponse(token));
     }
 
     private static async Task<IResult> LoginAsync(
@@ -39,6 +84,13 @@ public static class AuthApi
             return Results.Unauthorized();
         }
 
+        // Genereer JWT token en retourneer
+        var token = GenerateJwtToken(user, configuration);
+        return Results.Ok(new LoginResponse(token));
+    }
+
+    private static string GenerateJwtToken(IdentityUser user, IConfiguration configuration)
+    {
         // Haal JWT configuratie op uit appsettings.json
         var jwtSettings = configuration.GetSection("JwtSettings");
         var secretKey = jwtSettings["SecretKey"] 
@@ -76,9 +128,6 @@ public static class AuthApi
             signingCredentials: credentials
         );
 
-        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-        // Retourneer alleen de token (zoals gespecificeerd)
-        return Results.Ok(new LoginResponse(tokenString));
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
