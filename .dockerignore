@@ -1,0 +1,52 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Build results
+**/bin/
+**/obj/
+**/out/
+**/TestResults/
+
+# Visual Studio
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Docker
+**/.dockerignore
+**/Dockerfile*
+**/docker-compose*
+
+# Node modules (als je frontend tools gebruikt)
+**/node_modules/
+
+# Database files
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.sqlite
+
+# Logs
+**/logs/
+**/*.log
+
+# OS files
+**/.DS_Store
+**/Thumbs.db
+
+# Test files
+**/*.http
+test-auth.http
+
+# IDE
+**/.idea/
+**/*.sln.iml
+
+# Secrets
+**/appsettings.Development.json
+**/secrets.json
