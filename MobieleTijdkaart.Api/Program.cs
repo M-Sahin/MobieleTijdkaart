@@ -75,14 +75,15 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IUserService, UserService>();
 
 // CORS configuratie
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
+    ?? new[] { "http://localhost:3000", "https://*.vercel.app" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsPolicyName, policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:3000",                                    // Lokale Next.js ontwikkeling
-                "https://mobiele-tijdkaart-frontend.vercel.app"            // Vercel productie (placeholder)
-              )
+        policy.WithOrigins(allowedOrigins)
+              .SetIsOriginAllowedToAllowWildcardSubdomains()               // Sta wildcard subdomains toe
               .AllowAnyHeader()                                             // Sta alle headers toe (inclusief Authorization)
               .WithMethods("GET", "POST", "PUT", "DELETE")                 // Alleen essentiële HTTP methods
               .AllowCredentials();                                          // Voor toekomstige HTTP-only cookies
