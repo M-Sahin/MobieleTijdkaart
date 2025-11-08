@@ -138,6 +138,9 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<ApplicationDbContext>();
         var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
         await DbInitializer.InitializeAsync(context, userManager);
+        
+        // Seed project data na database initialisatie
+        await DataSeeder.SeedProjectDataAsync(services);
     }
     catch (Exception ex)
     {

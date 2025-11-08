@@ -70,7 +70,7 @@ public static class TijdApi
         {
             ProjectId = request.ProjectId,
             UserId = userId, // Server-side ingevuld!
-            StartTijd = request.StartTijd,
+            StartTijd = DateTimeOffset.UtcNow, // Expliciet UTC timestamp
             EindTijd = null,
             DuurInMinuten = 0,
             Omschrijving = request.Omschrijving
