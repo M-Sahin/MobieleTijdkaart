@@ -174,4 +174,8 @@ api.MapGroup("/tijd")
     .MapTijdApi()
     .WithTags("Tijdregistratie");
 
+api.MapGroup("/projecten")
+    .MapProjectApi()
+    .WithTags("Projecten");
+
 app.Run();

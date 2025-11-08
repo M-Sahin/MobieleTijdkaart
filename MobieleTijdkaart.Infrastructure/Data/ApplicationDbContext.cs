@@ -28,6 +28,9 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
             entity.Property(e => e.Klantnaam).HasMaxLength(200);
             entity.Property(e => e.Uurtarief).HasColumnType("decimal(18,2)");
             entity.Property(e => e.IsActief).HasDefaultValue(true);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            
+            entity.HasIndex(e => e.UserId);
             
             entity.HasMany(e => e.TijdRegistraties)
                 .WithOne(e => e.Project)

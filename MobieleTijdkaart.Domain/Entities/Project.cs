@@ -7,6 +7,7 @@ public class Project
     public string? Klantnaam { get; set; }
     public decimal Uurtarief { get; set; }
     public bool IsActief { get; set; } = true;
+    public string UserId { get; set; } = string.Empty;
     
     // Navigation properties
     public ICollection<TijdRegistratie> TijdRegistraties { get; set; } = new List<TijdRegistratie>();

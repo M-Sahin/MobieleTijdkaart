@@ -29,6 +29,12 @@ public static class TijdApi
             .WithTags("Tijdregistratie")
             .WithOpenApi();
 
+        group.MapGet("/lopend", GetLopendeTijdRegistratieAsync)
+            .RequireAuthorization()
+            .WithName("GetLopendeTijdRegistratie")
+            .WithTags("Tijdregistratie")
+            .WithOpenApi();
+
         group.MapGet("/project/{projectId}", GetTijdRegistratiesByProjectAsync)
             .RequireAuthorization()
             .WithName("GetTijdRegistratiesByProject")
@@ -227,5 +233,38 @@ public static class TijdApi
             .ToListAsync();
 
         return Results.Ok(registraties);
+    }
+
+    private static async Task<IResult> GetLopendeTijdRegistratieAsync(
+        ApplicationDbContext db,
+        IUserService userService,
+        ClaimsPrincipal user)
+    {
+        var userId = userService.GetCurrentUserId(user);
+        
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Zoek de lopende tijdregistratie (EindTijd == null) voor de ingelogde gebruiker
+        var lopendeTijd = await db.TijdRegistraties
+            .Include(t => t.Project)
+            .Where(t => t.UserId == userId && t.EindTijd == null)
+            .Select(t => new TijdRegistratieDto
+            {
+                Id = t.Id,
+                ProjectId = t.ProjectId,
+                ProjectNaam = t.Project.Naam,
+                UserId = t.UserId,
+                StartTijd = t.StartTijd,
+                EindTijd = t.EindTijd,
+                DuurInMinuten = t.DuurInMinuten,
+                Omschrijving = t.Omschrijving
+            })
+            .FirstOrDefaultAsync();
+
+        // Retourneer 200 OK met null of het object - geen 404
+        return Results.Ok(lopendeTijd);
     }
 }

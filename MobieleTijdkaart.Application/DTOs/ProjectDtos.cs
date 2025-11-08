@@ -1,6 +1,13 @@
 namespace MobieleTijdkaart.Application.DTOs;
 
-public class CreateProjectDto
+public class CreateProjectRequest
+{
+    public string Naam { get; set; } = string.Empty;
+    public string? Klantnaam { get; set; }
+    public decimal Uurtarief { get; set; }
+}
+
+public class UpdateProjectRequest
 {
     public string Naam { get; set; } = string.Empty;
     public string? Klantnaam { get; set; }
@@ -13,5 +20,4 @@ public class ProjectDto
     public string Naam { get; set; } = string.Empty;
     public string? Klantnaam { get; set; }
     public decimal Uurtarief { get; set; }
-    public bool IsActief { get; set; }
 }
